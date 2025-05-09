@@ -17,7 +17,7 @@ typedef struct {
     char read;      // символ, ожидаемый в текущей ячейке
     char write;     // символ, который нужно записать
     char move;      // 'L', 'R' или 'S'
-    int next_state; // новый номер состояния 
+    int nextState;  // новый номер состояния 
 } TM_Transition;
 
 // Набор переходов для одного состояния
@@ -33,17 +33,18 @@ typedef struct TM_Cell {
     struct TM_Cell *right; // сосед справа
 } TM_Cell;
 
-// Собственно машина Тьюринга
+// Машина Тьюринга
 typedef struct {
     TM_State states[TM_MAX_STATE]; // система команд
-    int state_qty;                 // сколько состояний загружено
-    int cur_state;                 // текущее состояние
+    int stateQty;                  // сколько состояний загружено
+    int curState;                  // текущее состояние
     TM_Cell *head;                 // текущая ячейка (головка)
     TM_Cell *leftmost;             // крайняя левая непустая
     TM_Cell *rightmost;            // крайняя правая непустая
     char blank;                    // cимвол пустой ячейки (‘_’)
-    int step_counter;              // число уже выполненных шагов
+    int stepCount;                 // число уже выполненных шагов
 } TM_Machine;
+
 
 /*
  Подпрограмма для создания и заполнения машины Тьюринга
@@ -53,7 +54,7 @@ typedef struct {
     3) символ, для считывания ячейкой ленты
  Выход: true - файл прочитан без ошибок, иначе - false
 */
-bool tm_init(TM_Machine *tm, char *fname, char blank);
+bool tmInit(TM_Machine *tm, char *fname, char blank);
 
 /*
  Подпрограмма для заммены текущей ленты машины на новое слово
@@ -62,7 +63,7 @@ bool tm_init(TM_Machine *tm, char *fname, char blank);
     2) строка, которую нужно поместить на ленту
  Выход: (нет) – процедура
 */ 
-void tm_load_tape(TM_Machine *tm, char *input);
+void tmLoadTape(TM_Machine *tm, char *input);
 
 /*
  Подпрограмма выполняет один переход машины
@@ -70,7 +71,7 @@ void tm_load_tape(TM_Machine *tm, char *input);
     1) указатель на машину, над которой выполняется шаг
  Выход: true  – машина перешла в состояние q0, если выполнен обычный шаг - false
 */   
-bool tm_step(TM_Machine *tm);
+bool tmStep(TM_Machine *tm);
 
 /*
  Подпрограмма запускает машину в автоматическом режиме
@@ -79,7 +80,7 @@ bool tm_step(TM_Machine *tm);
     2) максимальное число шагов
  Выход: (нет) – процедура
 */  
-void tm_run(TM_Machine *tm, int max_steps);
+void tmRun(TM_Machine *tm, int max_steps);
 
 /*
  Подпрограмма отображает текущую конфигурацию машины
@@ -87,6 +88,31 @@ void tm_run(TM_Machine *tm, int max_steps);
     1) указатель на машину, конфигурацию которой нужно вывести
  Выход: (нет) – процедура
 */   
-void tm_print(TM_Machine *tm);
+void tmPrint(TM_Machine *tm);
 
-#endif 
+/*
+ Подпрограмма добавляет переход к состоянию
+ Вход:
+    1) указатель на структуру состояния
+    2) структура перехода
+ Выход: true – переход успешно добавлен, иначе false
+*/
+bool addTransition(TM_State *state, TM_Transition transition);
+
+/*
+ Подпрограмма ищет переход по символу
+ Вход:
+    1) указатель на машину
+    2) символ, находящийся под головкой
+ Выход: указатель на найденный переход или NULL
+*/
+TM_Transition *findTransition(TM_Machine *tm, char sym);
+
+/*
+ Подпрограмма освобождает всю выделенную память ленты
+ Вход : указатель на машину
+ Выход: (нет) – процедура
+*/
+void tmFree(TM_Machine *tm);
+
+#endif

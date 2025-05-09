@@ -4,54 +4,52 @@
 #include <stdbool.h>
 
 #define cnMax   256
-#define maxSize 10000
+#define maxStep 10000
 
-// Подпрограмма для проверки входной двоичной строки
-// Вход: указатель на C‑строку
-// Выход: true, если строка непуста и содержит только '0' или '1', иначе - false
+/*
+ Подпрограмма проверяет, является ли строка двоичным числом
+ Вход : указатель на строку
+ Выход: true, если непуста и состоит только из '0' и '1'
+*/
 bool isBinary(char *str);
 
 int main(void) {
     TM_Machine tm;
-    bool initOk = tm_init(&tm, "tm_table.txt", '_');
+    bool initOk = tmInit(&tm, "tm_table.txt", '_');
     bool isWork = initOk;
 
-    if (!initOk)
+    if (!initOk) 
         printf("Ошибка чтения файла системы команд.\n");
+
     while (isWork) {
         char arrBuf[cnMax];
-        bool validInp = false;
-        while (!validInp) {
+        bool isCorrect = false;
+        while (!isCorrect) {
             printf("Введите неотрицательное число в двоичной форме (или \"exit\"): ");
             if (scanf("%255s", arrBuf) != 1) {
-                isWork = false;          
-                validInp = true;   
+                isWork = false;
+                isCorrect = true;
             } else if (strcmp(arrBuf, "exit") == 0) {
-                isWork = false;         
-                validInp = true;
+                isWork = false;
+                isCorrect = true;
             } else if (isBinary(arrBuf))
-                validInp = true;  
+                isCorrect = true;
             else
                 printf("Ошибка: допустимы только символы 0 и 1.\n");
         }
-
-        bool needProc = isWork;
-        if (needProc) {
-            tm_load_tape(&tm, arrBuf);
-            tm_run(&tm, maxSize);
+        if (isWork) {
+            tmLoadTape(&tm, arrBuf);
+            tmRun(&tm, maxStep);
         }
     }
-    return 0; 
+    tmFree(&tm); 
+    return 0;
 }
 
-
 bool isBinary(char *str) {
-    bool isOk = true;
-    if (str[0] == '\0')
-        isOk = false;
-    for (int i = 0; isOk && str[i] != '\0'; i++) {
+    bool ok = str[0] != '\0';
+    for (int i = 0; ok && str[i] != '\0'; i++)
         if (str[i] != '0' && str[i] != '1')
-            isOk = false;
-    }        
-    return isOk;
+            ok = false;
+    return ok;
 }

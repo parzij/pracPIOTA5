@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define cnMax   256
+#define cnMAX   256
 #define maxStep 10000
 
 /*
@@ -22,7 +22,7 @@ int main(void) {
         printf("Ошибка чтения файла системы команд.\n");
 
     while (isWork) {
-        char arrBuf[cnMax];
+        char arrBuf[cnMAX];
         bool isCorrect = false;
         while (!isCorrect) {
             printf("Введите неотрицательное число в двоичной форме (или \"exit\"): ");

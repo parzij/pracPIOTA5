@@ -1,43 +1,57 @@
 #include "TuringMachine.h"
-#include <ctype.h>
+#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+#include <stdbool.h>
 
-/* ---------- проверка входной двоичной строки ---------- */
-static int is_binary(const char *s)
-{
-    int ok = 1, i = 0;
-    if (s[0] == '\0') { ok = 0; }
-    while (ok && s[i] != '\0') {
-        if (s[i] != '0' && s[i] != '1') { ok = 0; }
-        i++;
+#define cnMax   256
+#define maxSize 10000
+
+// Подпрограмма для проверки входной двоичной строки
+// Вход: указатель на C‑строку
+// Выход: true, если строка непуста и содержит только '0' или '1', иначе - false
+bool isBinary(char *str);
+
+int main(void) {
+    TM_Machine tm;
+    bool initOk = tm_init(&tm, "tm_table.txt", '_');
+    bool isWork = initOk;
+
+    if (!initOk)
+        printf("Ошибка чтения файла системы команд.\n");
+    while (isWork) {
+        char arrBuf[cnMax];
+        bool validInp = false;
+        while (!validInp) {
+            printf("Введите неотрицательное число в двоичной форме (или \"exit\"): ");
+            if (scanf("%255s", arrBuf) != 1) {
+                isWork = false;          
+                validInp = true;   
+            } else if (strcmp(arrBuf, "exit") == 0) {
+                isWork = false;         
+                validInp = true;
+            } else if (isBinary(arrBuf))
+                validInp = true;  
+            else
+                printf("Ошибка: допустимы только символы 0 и 1.\n");
+        }
+
+        bool needProc = isWork;
+        if (needProc) {
+            tm_load_tape(&tm, arrBuf);
+            tm_run(&tm, maxSize);
+        }
     }
-    return ok;
+    return 0; 
 }
 
-int main(void)
-{
-    TM_Machine tm;
-    if (!tm_init(&tm, "tm_table.txt", '_')) {
-        printf("Ошибка чтения файла системы команд.\n");
-        return 1;
-    }
 
-    int work = 1;
-    while (work) {
-        char buf[256];
-        int valid = 0;
-        while (!valid) {
-            printf("Введите неотрицательное число в двоичной форме (или \"exit\"): ");
-            if (scanf("%255s", buf) != 1) { work = 0; valid = 1; }
-            else if (strcmp(buf, "exit") == 0) { work = 0; valid = 1; }
-            else if (is_binary(buf)) { valid = 1; }
-            else { printf("Ошибка: допустимы только символы 0 и 1.\n"); }
-        }
-        if (!work) { break; }
-
-        tm_load_tape(&tm, buf);
-        tm_run(&tm, 10000);
-    }
-    return 0;
+bool isBinary(char *str) {
+    bool isOk = true;
+    if (str[0] == '\0')
+        isOk = false;
+    for (int i = 0; isOk && str[i] != '\0'; i++) {
+        if (str[i] != '0' && str[i] != '1')
+            isOk = false;
+    }        
+    return isOk;
 }

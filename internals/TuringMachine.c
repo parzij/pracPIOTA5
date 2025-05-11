@@ -1,10 +1,12 @@
 #include "TuringMachine.h"
+#include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 
 /*
- Подпрограмма расширяет ленту пустой ячейкой слева.
- Вход : указатель на машину
+ Подпрограмма расширяет ленту пустой ячейкой слева
+ Вход :
+    1) указатель на машину
  Выход: (нет) – процедура
 */
 void tmCellExpandL(TM_Machine *tm) {
@@ -17,8 +19,9 @@ void tmCellExpandL(TM_Machine *tm) {
 }
 
 /*
- Подпрограмма расширяет ленту пустой ячейкой справа.
- Вход : указатель на машину
+ Подпрограмма расширяет ленту пустой ячейкой справа
+ Вход :
+    1) указатель на машину
  Выход: (нет) – процедура
 */
 void tmCellExpandR(TM_Machine *tm) {
@@ -31,13 +34,15 @@ void tmCellExpandR(TM_Machine *tm) {
 }
 
 /*
- Подпрограмма добавляет переход в структуру состояния.
- Вход : указатель на состояние, переход
- Выход: true – успешно, иначе false
+ Подпрограмма добавляет переход в структуру состояния
+ Вход :
+    1) указатель на структуру состояния
+    2) структура перехода
+ Выход: true – переход успешно добавлен, иначе false
 */
 bool addTransition(TM_State *st, TM_Transition tr) {
     bool isOk = false;
-    if (st -> count < TM_MAX_SYMBOL) {
+    if (st -> count < MaxSymbol) {
         st -> trs[st -> count] = tr;
         st -> count += 1;
         isOk = true;
@@ -54,7 +59,7 @@ bool addTransition(TM_State *st, TM_Transition tr) {
  Выход: true – чтение прошло успешно, иначе false
 */
 bool tmInit(TM_Machine *tm, char *fname, char blank) {
-    for (int i = 0; i < TM_MAX_STATE; i++)
+    for (int i = 0; i < MaxState; i++)
         tm -> states[i].count = 0;
     tm -> stateQty = 0;
     tm -> curState = 1;
@@ -65,8 +70,9 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
     tm -> stepCount = 0;
 
     FILE *fp = fopen(fname, "r");
-    bool isOk = (fp != NULL);
-    bool loop = isOk; 
+    bool isOk  = (fp != NULL);
+    bool loop = isOk;
+
     while (loop) {
         int st = 0, next = 0;
         char read = 0, write = 0, dir = 0;
@@ -74,26 +80,23 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
 
         if (res == EOF)
             loop = false;
-        else if (res != 5 || st >= TM_MAX_STATE || next >= TM_MAX_STATE) {
+        else if (res != 5 || st >= MaxState || next >= MaxState) {
             isOk = false;
             loop = false;
         } else {
-            TM_Transition tr;
-            tr.read = read;
-            tr.write = write;
-            tr.move = dir;
-            tr.nextState = next;
-
+            TM_Transition tr = {read, write, dir, next};
             if (!addTransition(&tm -> states[st], tr)) {
                 isOk = false;
                 loop = false;
             }
+
             if (st + 1 > tm -> stateQty) 
                 tm -> stateQty = st + 1;
             if (next + 1 > tm -> stateQty) 
                 tm -> stateQty = next + 1;
         }
     }
+
     if (fp) 
         fclose(fp);
     return isOk;
@@ -103,7 +106,7 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
  Подпрограмма заменяет текущую ленту новым словом
  Вход :
     1) указатель на машину
-    2) строка‑слово
+    2) строка‑слово, которую нужно разместить
  Выход: (нет) – процедура
 */
 void tmLoadTape(TM_Machine *tm, char *input) {
@@ -121,7 +124,6 @@ void tmLoadTape(TM_Machine *tm, char *input) {
     tm -> leftmost = left;
 
     TM_Cell *cur = left;
-
     size_t len = strlen(input);
     for (size_t k = 0; k < len; k++) {
         TM_Cell *node = (TM_Cell *)malloc(sizeof(TM_Cell));
@@ -137,22 +139,22 @@ void tmLoadTape(TM_Machine *tm, char *input) {
     right -> right = NULL;
     right -> left = cur;
     cur -> right = right;
-
     tm -> rightmost = right;
     tm -> head = left -> right;
-    tm -> curState  = 1;
+    tm -> curState = 1;
     tm -> stepCount = 0;
 }
 
 /*
  Подпрограмма ищет переход по символу
- Вход : машина, символ под головкой
+ Вход :
+    1) указатель на машину
+    2) символ под головкой
  Выход: указатель на найденный переход или NULL
 */
 TM_Transition *findTransition(TM_Machine *tm, char sym) {
     TM_State *st = &tm -> states[tm -> curState];
     TM_Transition *res = NULL;
-
     for (int i = 0; i < st -> count && res == NULL; i++) {
         if (st -> trs[i].read == sym)
             res = &st -> trs[i];
@@ -162,7 +164,8 @@ TM_Transition *findTransition(TM_Machine *tm, char sym) {
 
 /*
  Подпрограмма выполняет один переход машины
- Вход : указатель на машину
+ Вход :
+    1) указатель на машину
  Выход: true  – машина перешла в q0, иначе false
 */
 bool tmStep(TM_Machine *tm) {
@@ -176,7 +179,8 @@ bool tmStep(TM_Machine *tm) {
             if (tm -> head -> left == NULL) 
                 tmCellExpandL(tm);
             tm -> head = tm -> head -> left;
-        } else if (tr -> move == 'R') {
+        }
+        else if (tr -> move == 'R') {
             if (tm -> head -> right == NULL) 
                 tmCellExpandR(tm);
             tm -> head = tm -> head -> right;
@@ -191,29 +195,29 @@ bool tmStep(TM_Machine *tm) {
 }
 
 /*
- Подпрограмма отображает текущую конфигурацию
- Вход : указатель на машину
+ Подпрограмма отображает текущую конфигурацию машины
+ Вход :
+    1) указатель на машину
  Выход: (нет) – процедура
 */
 void tmPrint(TM_Machine *tm) {
-    const int window = 30;
+    const int window = 100;
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    const WORD clrNorm = 7;
+    const WORD clrRed = (WORD)(FOREGROUND_RED | FOREGROUND_INTENSITY);
+
     const TM_Cell *start = tm -> head;
     for (int moved = 0; moved < window && start -> left != NULL; moved++, start = start -> left);
 
     const TM_Cell *cur = start;
-    int headPos = -1;
     for (int pos = 0; cur != NULL && pos < 2 * window; pos++, cur = cur -> right) {
+        if (cur == tm -> head) 
+            SetConsoleTextAttribute(hOut, clrRed);
         putchar(cur -> sym);
-        if (cur == tm -> head)
-            headPos = pos;
+        if (cur == tm -> head) 
+            SetConsoleTextAttribute(hOut, clrNorm);
     }
     putchar('\n');
-
-    for (int i = 0; i < headPos; i++)
-        putchar(' ');
-    putchar('^');
-    putchar('\n');
-
     printf("q%d, step %d\n\n", tm -> curState, tm -> stepCount);
 }
 
@@ -227,11 +231,12 @@ void tmPrint(TM_Machine *tm) {
 void tmRun(TM_Machine *tm, int maxSteps) {
     tmPrint(tm);
     bool isDone = false;
-    int stepMade = 0;
-    while (!isDone && stepMade < maxSteps) {
+    int made = 0;
+
+    while (!isDone && made < maxSteps) {
         isDone = tmStep(tm);
         tmPrint(tm);
-        stepMade++;
+        made++;
     }
 
     (isDone) ? printf("Машина завершила работу (q0).\n") : printf("Достигнут лимит %d шагов.\n", maxSteps);
@@ -239,7 +244,8 @@ void tmRun(TM_Machine *tm, int maxSteps) {
 
 /*
  Подпрограмма освобождает все ячейки ленты и обнуляет указатели
- Вход : указатель на машину
+ Вход :
+    1) указатель на машину
  Выход: (нет) – процедура
 */
 void tmFree(TM_Machine *tm) {

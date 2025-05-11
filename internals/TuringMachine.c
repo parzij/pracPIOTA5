@@ -70,7 +70,7 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
     tm -> stepCount = 0;
 
     FILE *fp = fopen(fname, "r");
-    bool isOk  = (fp != NULL);
+    bool isOk = (fp != NULL);
     bool loop = isOk;
 
     while (loop) {
@@ -166,7 +166,7 @@ TM_Transition *findTransition(TM_Machine *tm, char sym) {
  Подпрограмма выполняет один переход машины
  Вход :
     1) указатель на машину
- Выход: true  – машина перешла в q0, иначе false
+ Выход: true – машина перешла в q0, иначе false
 */
 bool tmStep(TM_Machine *tm) {
     bool halted = false;

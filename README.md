@@ -24,7 +24,8 @@ internals/
 **Компиляция проекта:**
 
 ```bash
-gcc -std=c99 -Wall -Wextra -pedantic TuringMachine.c main.c -o tm_demo
+gcc -std=c99 -O2 -Wall -Wextra -pedantic main.c TuringMachine.c -o IZ_KTbo1-7_BatychkovVG_5-1.exe -static -static-libgcc
+
 ```
 
 ---

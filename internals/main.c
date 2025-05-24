@@ -1,67 +1,45 @@
+/* --------------------------------------------------------
+ * @file   main.cpp
+ * @brief Точка входа: инициализирует машину и запускает
+ * интерактивный режим работы МТ
+ *
+ * ЮФУ, ИКТИБ, кафедра МОП ЭВМ
+ * Программирование и основы теории алгоритмов 2
+ * Индивидуальное задание № 1 (МТ)
+ * Батычков Вячеслав Геннадьевич, КТбо1-7
+ * 23.05.2025
+ * --------------------------------------------------------*/
+
 #include "TuringMachine.h"
-#include <windows.h>
 #include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
 
-#define cnMAX   256
-#define maxStep 10000000
+/**
+ * @def MAX_STEP
+ * @brief Максимальное количество шагов за одну сессию интерактивного режима.
+ */
+#define MAX_STEP 10000000
 
-/*
- Подпрограмма проверяет, является ли строка двоичным числом
- Вход :
-    1) указатель на строку
- Выход: true, если непуста и состоит только из '0' и '1'
-*/
-bool isBinary(char *str);
-
+/**
+ * @brief Главная функция приложения.
+ *
+ * Алгоритм:
+ * - создаёт структуру TM_Machine;
+ * - пытается загрузить систему команд из *tmTable.txt* с помощью tmInit;
+ * - если загрузка успешна — запускает интерактивный режим tm_run;
+ *   иначе выводит сообщение об ошибке;
+ * - по завершении освобождает все ресурсы через tmFree.
+ *
+ * @return 0 — нормальное завершение.
+ */
 int main(void) {
-    SetConsoleOutputCP(65001);
-    SetConsoleCP(65001);
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD  mode;
-    if (GetConsoleMode(hOut, &mode))
-        SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
     TM_Machine tm;
-    bool initOk = tmInit(&tm, "tmTable.txt", '_');
-    bool isWork   = initOk;
+    bool loaded = tmInit(&tm, "tmTable.txt", '_');
 
-    if (!initOk)
+    if (loaded)
+        tm_run(&tm, MAX_STEP);
+    else
         printf("Ошибка чтения файла системы команд.\n");
-
-    while (isWork) {
-        char arrBuff[cnMAX];
-        bool isCorrect = false;
-
-        while (!isCorrect) {
-            printf("Введите неотрицательное число в двоичной форме (или \"exit\"): ");
-            if (scanf("%255s", arrBuff) != 1) {
-                isWork = false;
-                isCorrect = true;
-            } else if (strcmp(arrBuff, "exit") == 0) {
-                isWork = false;
-                isCorrect = true;
-            } else if (isBinary(arrBuff))
-                isCorrect = true;
-            else
-                printf("Ошибка: допустимы только символы 0 и 1.\n");
-        }
-
-        if (isWork) {
-            tmLoadTape(&tm, arrBuff);
-            tmRun(&tm, maxStep);
-        }
-    }
 
     tmFree(&tm);
     return 0;
-}
-
-bool isBinary(char *str) {
-    bool ok = str[0] != '\0';
-    for (int i = 0; ok && str[i] != '\0'; i++)
-        if (str[i] != '0' && str[i] != '1')
-            ok = false;
-    return ok;
 }

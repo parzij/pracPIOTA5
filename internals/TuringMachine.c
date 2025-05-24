@@ -1,29 +1,32 @@
+/**
+ * @file  TuringMachine.c
+ * @brief Реализация одноленточной детерминированной машины Тьюринга.
+ */
+
 #include "TuringMachine.h"
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 
-/*
- Подпрограмма расширяет ленту пустой ячейкой слева
- Вход :
-    1) указатель на машину
- Выход: (нет) – процедура
-*/
+/**
+ * @brief Добавляет пустую ячейку слева от текущего левого края.
+ *
+ * @param tm Указатель на машину.
+ */
 void tmCellExpandL(TM_Machine *tm) {
     TM_Cell *newLeft = (TM_Cell *)malloc(sizeof(TM_Cell));
     newLeft -> sym = tm -> blank;
-    newLeft -> left = NULL;
+    newLeft -> left  = NULL;
     newLeft -> right = tm -> leftmost;
     tm -> leftmost -> left = newLeft;
     tm -> leftmost = newLeft;
 }
 
-/*
- Подпрограмма расширяет ленту пустой ячейкой справа
- Вход :
-    1) указатель на машину
- Выход: (нет) – процедура
-*/
+/**
+ * @brief Добавляет пустую ячейку справа от текущего правого края.
+ *
+ * @param tm Указатель на машину.
+ */
 void tmCellExpandR(TM_Machine *tm) {
     TM_Cell *newRight = (TM_Cell *)malloc(sizeof(TM_Cell));
     newRight -> sym = tm -> blank;
@@ -33,13 +36,13 @@ void tmCellExpandR(TM_Machine *tm) {
     tm -> rightmost = newRight;
 }
 
-/*
- Подпрограмма добавляет переход в структуру состояния
- Вход :
-    1) указатель на структуру состояния
-    2) структура перехода
- Выход: true – переход успешно добавлен, иначе false
-*/
+/**
+ * @brief Добавляет переход в таблицу состояния.
+ *
+ * @param st Указатель на состояние, в которое нужно добавить правило.
+ * @param tr Структура перехода.
+ * @return `true`, если переход успешно добавлен, иначе `false`.
+ */
 bool addTransition(TM_State *st, TM_Transition tr) {
     bool isOk = false;
     if (st -> count < MaxSymbol) {
@@ -50,17 +53,18 @@ bool addTransition(TM_State *st, TM_Transition tr) {
     return isOk;
 }
 
-/*
- Подпрограмма для создания и заполнения машины Тьюринга
- Вход :
-    1) указатель на структуру
-    2) имя файла с системой команд
-    3) символ пустой ячейки
- Выход: true – чтение прошло успешно, иначе false
-*/
+/**
+ * @brief Создаёт и заполняет структуру машины Тьюринга.
+ *
+ * @param tm Структура машины.
+ * @param fname Файл с таблицей команд.
+ * @param blank Символ пустой ячейки.
+ * @return `true`, если чтение файла прошло успешно, иначе `false`.
+ */
 bool tmInit(TM_Machine *tm, char *fname, char blank) {
     for (int i = 0; i < MaxState; i++)
         tm -> states[i].count = 0;
+
     tm -> stateQty = 0;
     tm -> curState = 1;
     tm -> blank = blank;
@@ -78,9 +82,9 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
         char read = 0, write = 0, dir = 0;
         int res = fscanf(fp, "%d %c %c %c %d", &st, &read, &write, &dir, &next);
 
-        if (res == EOF)
+        if (res == EOF) {
             loop = false;
-        else if (res != 5 || st >= MaxState || next >= MaxState) {
+        } else if (res != 5 || st >= MaxState || next >= MaxState) {
             isOk = false;
             loop = false;
         } else {
@@ -89,7 +93,6 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
                 isOk = false;
                 loop = false;
             }
-
             if (st + 1 > tm -> stateQty) 
                 tm -> stateQty = st + 1;
             if (next + 1 > tm -> stateQty) 
@@ -102,13 +105,12 @@ bool tmInit(TM_Machine *tm, char *fname, char blank) {
     return isOk;
 }
 
-/*
- Подпрограмма заменяет текущую ленту новым словом
- Вход :
-    1) указатель на машину
-    2) строка‑слово, которую нужно разместить
- Выход: (нет) – процедура
-*/
+/**
+ * @brief Заменяет текущую ленту новым словом.
+ *
+ * @param tm Указатель на машину.
+ * @param input Нуль-терминированная строка для размещения на ленте.
+ */
 void tmLoadTape(TM_Machine *tm, char *input) {
     TM_Cell *p = tm -> leftmost;
     while (p != NULL) {
@@ -145,43 +147,42 @@ void tmLoadTape(TM_Machine *tm, char *input) {
     tm -> stepCount = 0;
 }
 
-/*
- Подпрограмма ищет переход по символу
- Вход :
-    1) указатель на машину
-    2) символ под головкой
- Выход: указатель на найденный переход или NULL
-*/
+/**
+ * @brief Ищет переход по текущему символу.
+ *
+ * @param tm Машина.
+ * @param sym Символ под головкой.
+ * @return Указатель на найденный переход или `NULL`.
+ */
 TM_Transition *findTransition(TM_Machine *tm, char sym) {
     TM_State *st = &tm -> states[tm -> curState];
     TM_Transition *res = NULL;
-    for (int i = 0; i < st -> count && res == NULL; i++) {
-        if (st -> trs[i].read == sym)
+    for (int i = 0; i < st -> count && !res; i++) {
+        if (st -> trs[i].read == sym)    
             res = &st -> trs[i];
     }
     return res;
 }
 
-/*
- Подпрограмма выполняет один переход машины
- Вход :
-    1) указатель на машину
- Выход: true – машина перешла в q0, иначе false
-*/
+/**
+ * @brief Выполняет один переход машины.
+ *
+ * @param tm Указатель на машину.
+ * @return `true`, если машина остановилась (q0), иначе `false`.
+ */
 bool tmStep(TM_Machine *tm) {
     bool halted = false;
     TM_Transition *tr = findTransition(tm, tm -> head -> sym);
-    if (tr == NULL)
-        tm -> curState = 0;
-    else {
+    if (!tr) {
+        tm -> curState = 0; 
+    } else {
         tm -> head -> sym = tr -> write;
         if (tr -> move == 'L') {
-            if (tm -> head -> left == NULL) 
+            if (!tm -> head -> left) 
                 tmCellExpandL(tm);
             tm -> head = tm -> head -> left;
-        }
-        else if (tr -> move == 'R') {
-            if (tm -> head -> right == NULL) 
+        } else if (tr -> move == 'R') {
+            if (!tm -> head -> right) 
                 tmCellExpandR(tm);
             tm -> head = tm -> head -> right;
         }
@@ -194,12 +195,11 @@ bool tmStep(TM_Machine *tm) {
     return halted;
 }
 
-/*
- Подпрограмма отображает текущую конфигурацию машины
- Вход :
-    1) указатель на машину
- Выход: (нет) – процедура
-*/
+/**
+ * @brief Печатает окно ленты, состояние и счётчик шагов.
+ *
+ * @param tm Машина, чью конфигурацию нужно вывести.
+ */
 void tmPrint(TM_Machine *tm) {
     const int window = 100;
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -207,27 +207,27 @@ void tmPrint(TM_Machine *tm) {
     const WORD clrRed = (WORD)(FOREGROUND_RED | FOREGROUND_INTENSITY);
 
     const TM_Cell *start = tm -> head;
-    for (int moved = 0; moved < window && start -> left != NULL; moved++, start = start -> left);
+    for (int moved = 0; moved < window && start -> left; moved++, start = start -> left);
 
     const TM_Cell *cur = start;
-    for (int pos = 0; cur != NULL && pos < 2 * window; pos++, cur = cur -> right) {
+    for (int pos = 0; cur && pos < 2 * window; pos++, cur = cur -> right) {
         if (cur == tm -> head) 
             SetConsoleTextAttribute(hOut, clrRed);
         putchar(cur -> sym);
         if (cur == tm -> head) 
             SetConsoleTextAttribute(hOut, clrNorm);
     }
+
     putchar('\n');
     printf("q%d, step %d\n\n", tm -> curState, tm -> stepCount);
 }
 
-/*
- Подпрограмма запускает машину в автоматическом режиме
- Вход :
-    1) указатель на машину
-    2) максимальное число шагов
- Выход: (нет) – процедура
-*/
+/**
+ * @brief Непрерывный запуск машины с ограничением по количеству шагов.
+ *
+ * @param tm Машина.
+ * @param maxSteps Максимум шагов.
+ */
 void tmRun(TM_Machine *tm, int maxSteps) {
     tmPrint(tm);
     bool isDone = false;
@@ -242,15 +242,14 @@ void tmRun(TM_Machine *tm, int maxSteps) {
     (isDone) ? printf("Машина завершила работу (q0).\n") : printf("Достигнут лимит %d шагов.\n", maxSteps);
 }
 
-/*
- Подпрограмма освобождает все ячейки ленты и обнуляет указатели
- Вход :
-    1) указатель на машину
- Выход: (нет) – процедура
-*/
+/**
+ * @brief Освобождает память, занимаемую текущей лентой.
+ *
+ * @param tm Машина, чью ленту нужно очистить.
+ */
 void tmFree(TM_Machine *tm) {
     TM_Cell *p = tm -> leftmost;
-    while (p != NULL) {
+    while (p) {
         TM_Cell *next = p -> right;
         free(p);
         p = next;
@@ -258,4 +257,59 @@ void tmFree(TM_Machine *tm) {
     tm -> leftmost = NULL;
     tm -> rightmost = NULL;
     tm -> head = NULL;
+}
+
+/**
+ * @brief Проверяет, что строка содержит непустое двоичное число.
+ *
+ * @param str Нуль-терминированная строка.
+ * @return `true`, если строка непуста и состоит только из '0' и '1'.
+ */
+bool isBinary(char *str) {
+    bool ok = (str != NULL) && (str[0] != '\0');
+    for (int i = 0; ok && str[i] != '\0'; i++) {
+        if (str[i] != '0' && str[i] != '1') 
+            ok = false;
+    }
+    return ok;
+}
+
+/**
+ * @brief Диалог с пользователем: ввод слова → запуск → вывод.
+ *
+ * @param tm Экземпляр машины.
+ * @param maxSteps Ограничение на количество шагов в одной сессии.
+ */
+void tm_run(TM_Machine *tm, int maxSteps) {
+    SetConsoleOutputCP(65001);
+    SetConsoleCP(65001);
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode;
+    if (GetConsoleMode(hOut, &mode))
+        SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    bool isWork = true;
+    while (isWork) {
+        char arrBuff[cnMax];
+        bool isCorrect = false;
+        while (!isCorrect) {
+            printf("Введите неотрицательное число в двоичной форме (или \"exit\"): ");
+            if (scanf("%255s", arrBuff) != 1) {
+                isWork = false;
+                isCorrect = true;
+            } else if (strcmp(arrBuff, "exit") == 0) {
+                isWork = false;
+                isCorrect = true;
+            } else if (isBinary(arrBuff)) {
+                isCorrect = true;
+            } else {
+                printf("Ошибка: допустимы только символы 0 и 1.\n");
+            }
+        }
+
+        if (isWork) {
+            tmLoadTape(tm, arrBuff);
+            tmRun(tm, maxSteps);
+        }
+    }
 }
